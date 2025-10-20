@@ -1,6 +1,7 @@
+use std::ops::{Index, IndexMut};
 use num_traits::Float;
 
-mod ops;
+pub mod ops;
 
 /// A generic 3-dimensional vector struct with components specified in the i, j, and k directions.
 /// This struct represents a mathematical vector in a 3D space, where each component's type must
@@ -36,9 +37,9 @@ pub struct Iter<'a, T: Float> {
     index: u8,
 }
 
-pub struct IterMut <'a, T: Float> {
+pub struct IterMut<'a, T: Float> {
     inner: &'a mut Vector<T>,
-    counter: u8
+    counter: u8,
 }
 
 /// A function representing a zero vector of type `Vector<f32>`.
@@ -273,12 +274,32 @@ impl<T: Float> Vector<T> {
         }
     }
 
-    pub fn iter_mut(&mut self)  -> IterMut<'_, T> {
+    pub fn iter_mut(&mut self) -> IterMut<T> {}
+}
 
+impl<T: Float> Index<usize> for Vector<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.i,
+            1 => &self.j,
+            2 => &self.k,
+            _ => panic!("Index out of bounds for Vector: {}", index)
+        }
     }
 }
 
-
+impl<T: Float> IndexMut<usize> for Vector<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.i,
+            1 => &mut self.j,
+            2 => &mut self.k,
+            _ => panic!("Index out of bounds for Vector: {}", index)
+        }
+    }
+}
 impl<'a, T: Float> Iterator for Iter<'a, T> {
     type Item = T;
 
@@ -293,26 +314,28 @@ impl<'a, T: Float> Iterator for Iter<'a, T> {
         self.index += 1;
         return dir_to_return;
     }
-
 }
 
-impl <'a, T:Float> Iterator for IterMut<'a, T> {
-    type Item = &'a mut T;
+impl< T: Float> Iterator for IterMut<'_, T> {
+    type Item = &mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
-       let dir_to_return =  match self.count() {
-           n if n < 3 => Some(self.inner)
-       }
+        let dir_to_return = match self.count() {
+            n if n < 3 => Some(& mut self.inner[n]),
+            _ => None
+        };
+
+        dir_to_return
     }
 }
-impl <'a, T:Float> IntoIterator for &'a Vector<T> {
+impl<'a, T: Float> IntoIterator for &'a Vector<T> {
     type Item = T;
     type IntoIter = Iter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         Iter {
             struct_ref: self,
-            index: 0
+            index: 0,
         }
     }
 }
