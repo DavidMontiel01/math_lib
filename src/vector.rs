@@ -1,5 +1,6 @@
-use std::ops::{Index, IndexMut};
 use num_traits::Float;
+use std::marker::PhantomData;
+use std::ops::{Index, IndexMut};
 
 pub mod ops;
 
@@ -24,8 +25,7 @@ pub mod ops;
 /// let v = Vector { i: 1.0, j: 2.0, k: 3.0 };
 /// println!("Vector components: i={}, j={}, k={}", v.i, v.j, v.k);
 /// ```
-#[derive(Copy)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Vector<T: Float> {
     i: T, // magnitude in the i-hat direction
     j: T, // magnitude in the j-hat direction
@@ -38,8 +38,9 @@ pub struct Iter<'a, T: Float> {
 }
 
 pub struct IterMut<'a, T: Float> {
-    inner: &'a mut Vector<T>,
-    counter: u8,
+    inner: *mut Vector<T>,
+    index: u8,
+    _phantom: PhantomData<&'a mut Vector<T>>,
 }
 
 /// A function representing a zero vector of type `Vector<f32>`.
@@ -274,29 +275,35 @@ impl<T: Float> Vector<T> {
         }
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<T> {}
-}
-
-impl<T: Float> Index<usize> for Vector<T> {
-    type Output = T;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.i,
-            1 => &self.j,
-            2 => &self.k,
-            _ => panic!("Index out of bounds for Vector: {}", index)
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut {
+            inner: self,
+            index: 0,
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T: Float> IndexMut<usize> for Vector<T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+impl<T: Float> Index<u8> for Vector<T> {
+    type Output = T;
+
+    fn index(&self, index: u8) -> &Self::Output {
+        match index {
+            0 => &self.i,
+            1 => &self.j,
+            2 => &self.k,
+            _ => panic!("Index out of bounds for Vector: {}", index),
+        }
+    }
+}
+
+impl<T: Float> IndexMut<u8> for Vector<T> {
+    fn index_mut(&mut self, index: u8) -> &mut Self::Output {
         match index {
             0 => &mut self.i,
             1 => &mut self.j,
             2 => &mut self.k,
-            _ => panic!("Index out of bounds for Vector: {}", index)
+            _ => panic!("Index out of bounds for Vector: {}", index),
         }
     }
 }
@@ -310,26 +317,31 @@ impl<'a, T: Float> Iterator for Iter<'a, T> {
             2 => Some(self.struct_ref.k),
             _ => None,
         };
-
         self.index += 1;
-        return dir_to_return;
-    }
-}
-
-impl< T: Float> Iterator for IterMut<'_, T> {
-    type Item = &mut T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let dir_to_return = match self.count() {
-            n if n < 3 => Some(& mut self.inner[n]),
-            _ => None
-        };
 
         dir_to_return
     }
 }
+
+impl<'a, T: Float> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let dir_to_return = match self.index {
+            0 => Some(unsafe { &mut (*self.inner).i }),
+            1 => Some(unsafe { &mut (*self.inner).j }),
+            2 => Some(unsafe { &mut (*self.inner).j }),
+            _ => None,
+        };
+
+        self.index += 1;
+        dir_to_return
+    }
+}
+
 impl<'a, T: Float> IntoIterator for &'a Vector<T> {
     type Item = T;
+
     type IntoIter = Iter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
