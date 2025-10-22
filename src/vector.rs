@@ -27,9 +27,9 @@ pub mod ops;
 /// ```
 #[derive(Copy, Clone)]
 pub struct Vector<T: Float> {
-    i: T, // magnitude in the i-hat direction
-    j: T, // magnitude in the j-hat direction
-    k: T, // magnitude in teh j-hat direction
+    pub i: T, // magnitude in the i-hat direction
+    pub j: T, // magnitude in the j-hat direction
+    pub k: T, // magnitude in teh j-hat direction
 }
 pub struct Iter<'a, T: Float> {
     inner: &'a Vector<T>,
@@ -278,6 +278,13 @@ impl<T: Float> Vector<T> {
         }
     }
 
+    pub fn iter(&self) -> Iter<'_, T>{
+        Iter {
+            inner: self,
+            index: 0,
+        }
+    }
+
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
             inner: self,
@@ -351,14 +358,51 @@ impl<'a, T: Float> Iterator for IterMut<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let to_return = match self.index {
-            0 => Some( unsafe {&mut (*self.inner).i}),
-            1 => Some( unsafe {&mut (*self.inner).j}),
-            2 => Some( unsafe {&mut (*self.inner).k}),
+            0 => Some( unsafe {&mut (*self.inner).i} ),
+            1 => Some( unsafe {&mut (*self.inner).j} ),
+            2 => Some( unsafe {&mut (*self.inner).k} ),
             _ => None
         };
 
         self.index += 1;
 
         to_return
+    }
+}
+
+impl<'a, T: Float> IntoIterator for &'a Vector<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Iter{
+            inner: self,
+            index: 0
+        }
+    }
+}
+
+impl<T: Float> IntoIterator for Vector<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            inner: self,
+            index: 0
+        }
+    }
+}
+
+impl<'a, T: Float> IntoIterator for &'a mut Vector<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IterMut{
+            inner: self,
+            index: 0,
+            _phantom: PhantomData
+        }
     }
 }
