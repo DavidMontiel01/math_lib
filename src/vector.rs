@@ -31,16 +31,20 @@ pub struct Vector<T: Float> {
     j: T, // magnitude in the j-hat direction
     k: T, // magnitude in teh j-hat direction
 }
-
 pub struct Iter<'a, T: Float> {
-    struct_ref: &'a Vector<T>,
-    index: u8,
+    inner: &'a Vector<T>,
+    index: u8
+}
+
+pub struct IntoIter<T: Float> {
+    inner: Vector<T>,
+    index: u8
 }
 
 pub struct IterMut<'a, T: Float> {
     inner: *mut Vector<T>,
     index: u8,
-    _phantom: PhantomData<&'a mut Vector<T>>,
+    _phantom: PhantomData<&'a mut Vector<T>>
 }
 
 /// A function representing a zero vector of type `Vector<f32>`.
@@ -267,7 +271,6 @@ impl<T: Float> Vector<T> {
         let u_dot_v = u.dot(v);
         let v_magnitude = v.dot(v);
         let scalar = T::from(u_dot_v / v_magnitude).unwrap();
-
         Vector {
             i: v.i * scalar,
             j: v.j * scalar,
@@ -307,19 +310,39 @@ impl<T: Float> IndexMut<u8> for Vector<T> {
         }
     }
 }
+
+
 impl<'a, T: Float> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let to_return = match self.index {
+            0 => Some(&self.inner.i),
+            1 => Some(&self.inner.j),
+            2 => Some(&self.inner.k),
+            _ => None
+        };
+
+        self.index += 1;
+
+        to_return
+    }
+}
+impl<T:Float> Iterator for IntoIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let dir_to_return = match self.index {
-            0 => Some(self.struct_ref.i),
-            1 => Some(self.struct_ref.j),
-            2 => Some(self.struct_ref.k),
-            _ => None,
+        let to_return = match self.index {
+            0 => Some(self.inner.i),
+            1 => Some(self.inner.j),
+            2 => Some(self.inner.k),
+            _ => None
         };
+
         self.index += 1;
 
-        dir_to_return
+        to_return
+
     }
 }
 
@@ -327,27 +350,15 @@ impl<'a, T: Float> Iterator for IterMut<'a, T> {
     type Item = &'a mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let dir_to_return = match self.index {
-            0 => Some(unsafe { &mut (*self.inner).i }),
-            1 => Some(unsafe { &mut (*self.inner).j }),
-            2 => Some(unsafe { &mut (*self.inner).j }),
-            _ => None,
+        let to_return = match self.index {
+            0 => Some( unsafe {&mut (*self.inner).i}),
+            1 => Some( unsafe {&mut (*self.inner).j}),
+            2 => Some( unsafe {&mut (*self.inner).k}),
+            _ => None
         };
 
         self.index += 1;
-        dir_to_return
-    }
-}
 
-impl<'a, T: Float> IntoIterator for &'a Vector<T> {
-    type Item = T;
-
-    type IntoIter = Iter<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Iter {
-            struct_ref: self,
-            index: 0,
-        }
+        to_return
     }
 }
