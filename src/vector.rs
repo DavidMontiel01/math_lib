@@ -1,7 +1,10 @@
+use std::fmt::{Display, Formatter};
+use crate::vector::iterator::{Iter, IterMut};
 use num_traits::Float;
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 
+pub mod iterator;
 pub mod ops;
 
 /// A generic 3-dimensional vector struct with components specified in the i, j, and k directions.
@@ -10,8 +13,8 @@ pub mod ops;
 ///
 /// # Type Parameters
 /// - `T`: A generic type for the vector's components that must implement the `Float` trait,
-///        allowing operations typically associated with floating-point numbers (e.g., addition,
-///        subtraction, square roots).
+///   allowing operations typically associated with floating-point numbers (e.g., addition,
+///   subtraction, square roots).
 ///
 /// # Fields
 /// - `i` (`T`): The magnitude of the vector in the i-hat (x-axis) direction.
@@ -25,26 +28,11 @@ pub mod ops;
 /// let v = Vector { i: 1.0, j: 2.0, k: 3.0 };
 /// println!("Vector components: i={}, j={}, k={}", v.i, v.j, v.k);
 /// ```
-#[derive(Copy, Clone)]
-pub struct Vector<T: Float> {
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Vector<T> {
     pub i: T, // magnitude in the i-hat direction
     pub j: T, // magnitude in the j-hat direction
     pub k: T, // magnitude in teh j-hat direction
-}
-pub struct Iter<'a, T: Float> {
-    inner: &'a Vector<T>,
-    index: u8
-}
-
-pub struct IntoIter<T: Float> {
-    inner: Vector<T>,
-    index: u8
-}
-
-pub struct IterMut<'a, T: Float> {
-    inner: *mut Vector<T>,
-    index: u8,
-    _phantom: PhantomData<&'a mut Vector<T>>
 }
 
 /// A function representing a zero vector of type `Vector<f32>`.
@@ -104,7 +92,7 @@ pub fn k_hat<T: Float>() -> Vector<T> {
     }
 }
 
-impl<T: Float> Vector<T> {
+impl<T: Float + Copy + Clone> Vector<T> {
     pub fn new(i: T, j: T, k: T) -> Self {
         Vector { i, j, k }
     }
@@ -278,23 +266,27 @@ impl<T: Float> Vector<T> {
         }
     }
 
-    pub fn iter(&self) -> Iter<'_, T>{
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             inner: self,
-            index: 0,
+            front_index: 0,
+            end_index: 2,
+            size: Some(3),
         }
     }
 
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
             inner: self,
-            index: 0,
+            front_index: 0,
+            back_index: 2,
             _phantom: PhantomData,
+            size: Some(3),
         }
     }
 }
 
-impl<T: Float> Index<u8> for Vector<T> {
+impl<T> Index<u8> for Vector<T> {
     type Output = T;
 
     fn index(&self, index: u8) -> &Self::Output {
@@ -307,7 +299,7 @@ impl<T: Float> Index<u8> for Vector<T> {
     }
 }
 
-impl<T: Float> IndexMut<u8> for Vector<T> {
+impl<T> IndexMut<u8> for Vector<T> {
     fn index_mut(&mut self, index: u8) -> &mut Self::Output {
         match index {
             0 => &mut self.i,
@@ -318,91 +310,12 @@ impl<T: Float> IndexMut<u8> for Vector<T> {
     }
 }
 
+impl<T: Display> Display for Vector<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:}i\u{0302}", self.i)?;
 
-impl<'a, T: Float> Iterator for Iter<'a, T> {
-    type Item = &'a T;
+        write!(f, " {:+}j\u{0302}", self.j)?;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let to_return = match self.index {
-            0 => Some(&self.inner.i),
-            1 => Some(&self.inner.j),
-            2 => Some(&self.inner.k),
-            _ => None
-        };
-
-        self.index += 1;
-
-        to_return
-    }
-}
-impl<T:Float> Iterator for IntoIter<T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let to_return = match self.index {
-            0 => Some(self.inner.i),
-            1 => Some(self.inner.j),
-            2 => Some(self.inner.k),
-            _ => None
-        };
-
-        self.index += 1;
-
-        to_return
-
-    }
-}
-
-impl<'a, T: Float> Iterator for IterMut<'a, T> {
-    type Item = &'a mut T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let to_return = match self.index {
-            0 => Some( unsafe {&mut (*self.inner).i} ),
-            1 => Some( unsafe {&mut (*self.inner).j} ),
-            2 => Some( unsafe {&mut (*self.inner).k} ),
-            _ => None
-        };
-
-        self.index += 1;
-
-        to_return
-    }
-}
-
-impl<'a, T: Float> IntoIterator for &'a Vector<T> {
-    type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Iter{
-            inner: self,
-            index: 0
-        }
-    }
-}
-
-impl<T: Float> IntoIterator for Vector<T> {
-    type Item = T;
-    type IntoIter = IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter {
-            inner: self,
-            index: 0
-        }
-    }
-}
-
-impl<'a, T: Float> IntoIterator for &'a mut Vector<T> {
-    type Item = &'a mut T;
-    type IntoIter = IterMut<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IterMut{
-            inner: self,
-            index: 0,
-            _phantom: PhantomData
-        }
+        write!(f, " {:+}k\u{0302}", self.k)
     }
 }
