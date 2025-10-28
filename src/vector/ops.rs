@@ -17,7 +17,11 @@ impl<T: Float, const N: usize> Add for Vector<T, N> {
 
 impl<T: Float, const N: usize> AddAssign for Vector<T, N> {
     fn add_assign(&mut self, rhs: Self) {
-        self.components = self.components.map(|&mut x| *x += rhs);
+        for (self_c, rhs_c) in self.iter_mut().zip(rhs.components.iter()) {
+            
+            
+            
+        }
     }
 }
 

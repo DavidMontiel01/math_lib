@@ -65,4 +65,13 @@ impl<T: Float, const N: usize> Vector<T, N> {
     pub fn angle_rad(&self, rhs: &Self) -> impl Float {
         Float::acos(self.dot(rhs) / self.magnitude() * rhs.magnitude())
     }
+
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<T> {
+       self.components.iter_mut()
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<T> {
+        self.components.iter()
+    }
+
 }
