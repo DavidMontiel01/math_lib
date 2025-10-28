@@ -18,7 +18,7 @@ pub struct IntoIter<T> {
     pub(super) inner: Vector3d<T>,
     pub(super) front_index: u8,
     pub(super) end_index: u8,
-    pub(super) size: Option<usize>
+    pub(super) size: Option<usize>,
 }
 
 pub struct IterMut<'a, T> {
@@ -44,10 +44,9 @@ impl<'a, T> Iterator for Iter<'a, T> {
             return None;
         }
         // check for integer underflow for u8
-        if let Some(new_size) = self.size?.checked_sub(1)  {
+        if let Some(new_size) = self.size?.checked_sub(1) {
             self.size = Some(new_size);
-        }
-        else {
+        } else {
             return None;
         }
 
@@ -66,8 +65,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         if self.size.is_none() {
             (0, None)
-        }
-        else {
+        } else {
             (self.size.unwrap(), self.size)
         }
     }
@@ -82,21 +80,14 @@ impl<'a, T> IntoIterator for &'a Vector3d<T> {
             inner: self,
             front_index: 0,
             end_index: 2,
-            size: Some(3)
+            size: Some(3),
         }
     }
 }
 
 impl<T> FusedIterator for Iter<'_, T> {}
 
-impl<T> ExactSizeIterator for Iter<'_, T> {
-    fn len(&self) -> usize {
-        if self.size.is_none() {
-            return 0;
-        }
-        self.size.unwrap()
-    }
-}
+impl_exact_size_iterator!(Iter<'a, T>);
 
 impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
@@ -107,8 +98,7 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
         if let Some(new_size) = self.size?.checked_sub(1) {
             self.size = Some(new_size);
-        }
-        else {
+        } else {
             self.size = None;
             return None;
         }
@@ -138,8 +128,7 @@ impl<T: Copy> Iterator for IntoIter<T> {
 
         if let Some(new_value) = self.size?.checked_sub(1) {
             self.size = Some(new_value);
-        }
-        else{
+        } else {
             self.size = None;
             return None;
         }
@@ -159,8 +148,7 @@ impl<T: Copy> Iterator for IntoIter<T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         if self.size.is_none() {
             (0, None)
-        }
-        else {
+        } else {
             (self.size.unwrap(), self.size)
         }
     }
@@ -175,33 +163,25 @@ impl<T: Copy> IntoIterator for Vector3d<T> {
             inner: self,
             front_index: 0,
             end_index: 2,
-            size: Some(3)
+            size: Some(3),
         }
     }
 }
 
 impl<T: Copy> FusedIterator for IntoIter<T> {}
 
-impl<T: Copy> ExactSizeIterator for IntoIter<T> {
-    fn len(&self) -> usize {
-        if self.size.is_none() {
-            return 0;
-        }
-        return self.size.unwrap()
-    }
-}
+impl_exact_size_iterator!(IntoIter<'a, T>);
 
-impl<T:Copy> DoubleEndedIterator for IntoIter<T> {
+impl<T: Copy> DoubleEndedIterator for IntoIter<T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-         //so we don't have to check for an underflow after first underflow occurs
+        //so we don't have to check for an underflow after first underflow occurs
         if self.size.is_none() {
             return None;
         }
 
         if let Some(new_size) = self.size?.checked_sub(1) {
             self.size = Some(new_size);
-        }
-        else {
+        } else {
             self.size = None;
             return None;
         }
@@ -216,7 +196,6 @@ impl<T:Copy> DoubleEndedIterator for IntoIter<T> {
         self.end_index -= 1;
         dir_to_return
     }
-
 }
 //</editor-fold>
 
@@ -230,14 +209,13 @@ impl<'a, T> Iterator for IterMut<'a, T> {
         }
 
         //calculate first early return
-        if let Some(new_value) = self.size?.checked_sub(1)  {
+        if let Some(new_value) = self.size?.checked_sub(1) {
             self.size = Some(new_value);
-        }
-        else {
+        } else {
             self.size = None; // early return
         }
 
-        let to_return = match self.front_index{
+        let to_return = match self.front_index {
             0 => Some(unsafe { &mut (*self.inner).i }),
             1 => Some(unsafe { &mut (*self.inner).j }),
             2 => Some(unsafe { &mut (*self.inner).k }),
@@ -260,41 +238,31 @@ impl<'a, T> IntoIterator for &'a mut Vector3d<T> {
             front_index: 0,
             back_index: 2,
             _phantom: PhantomData,
-            size: Some(3)
+            size: Some(3),
         }
     }
 }
 
-impl<'a, T> FusedIterator for IterMut<'a, T> {
+impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
-}
+impl_exact_size_iterator!(IterMut<'a, T>);
 
-impl<'a, T> ExactSizeIterator for IterMut<'a, T> {
-    fn len(&self) -> usize {
-        if self.size.is_none() {
-            return 0;
-        }
-
-        self.size.unwrap()
-    }
-}
 impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.size.is_none() {
             return None;
         }
 
-        if let Some(new_value) = self.size?.checked_sub(1)  {
+        if let Some(new_value) = self.size?.checked_sub(1) {
             self.size = Some(new_value);
-        }
-        else {
+        } else {
             self.size = None; // early return
         }
 
         let dir_to_return = match self.back_index {
-            0 => Some(unsafe { &mut (*self.inner).i } ),
-            1 => Some(unsafe { &mut (*self.inner).j } ),
-            2 => Some(unsafe { &mut (*self.inner).k } ),
+            0 => Some(unsafe { &mut (*self.inner).i }),
+            1 => Some(unsafe { &mut (*self.inner).j }),
+            2 => Some(unsafe { &mut (*self.inner).k }),
             _ => None,
         };
 
