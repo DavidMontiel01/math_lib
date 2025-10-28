@@ -1,26 +1,31 @@
 use crate::vector::Vector;
-use std::marker::PhantomData;
+use num_traits::Float;
 
-pub struct Iter<'a, T, const N: usize> {
-    inner: &'a Vector<T, N>,
-    front_index: usize,
-    back_index: usize,
-    size: Option<usize>,
+impl<'a, T: Float, const N: usize> IntoIterator for &'a Vector<T, N> {
+    type Item = &'a T;
+    type IntoIter = std::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.components.iter()
+    }
 }
 
-pub struct IntoIter<T, const N: usize> {
-    inner: Vector<T, N>,
-    front_index: usize,
-    back_index: usize,
-    size: Option<usize>,
+impl<T: Float, const N:usize> IntoIterator for Vector<T, N> {
+    type Item = T;
+    type IntoIter = std::array::IntoIter<T, N>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.components.into_iter()
+    }
 }
 
-pub struct IterMut<'a, T, const N: usize> {
-    inner: *mut Vector<T, N>,
-    front_index: usize,
-    back_index: usize,
-    size: Option<usize>,
-    phantom_data: PhantomData<&'a mut Vector<T, N>>,
+impl<'a, T: Float, const N: usize> IntoIterator for &'a mut Vector<T, N> {
+    type Item = &'a mut T;
+    type IntoIter = std::slice::IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.components.iter_mut()
+    }
 }
 
 
