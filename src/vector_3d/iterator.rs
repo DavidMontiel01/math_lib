@@ -170,7 +170,7 @@ impl<T: Copy> IntoIterator for Vector3d<T> {
 
 impl<T: Copy> FusedIterator for IntoIter<T> {}
 
-impl_exact_size_iterator!(IntoIter<'a, T>);
+impl_exact_size_iterator!(IntoIter<T>);
 
 impl<T: Copy> DoubleEndedIterator for IntoIter<T> {
     fn next_back(&mut self) -> Option<Self::Item> {

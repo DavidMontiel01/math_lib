@@ -18,29 +18,28 @@ impl<T: Float, const N: usize> Add for Vector<T, N> {
 impl<T: Float, const N: usize> AddAssign for Vector<T, N> {
     fn add_assign(&mut self, rhs: Self) {
         for (self_c, rhs_c) in self.iter_mut().zip(rhs.components.iter()) {
-            
-            
-            
+            *self_c = *self_c + *rhs_c;
         }
     }
 }
 
-impl<T: Float, const N: usize> Mul for Vector<T, N> {
+impl<T: Float, const N: usize> Mul<T> for Vector<T, N> {
     type Output = Self;
 
     fn mul(self, rhs: T) -> Self::Output {
-        let output = Self;
-        for (e1, e2) in &self.components.iter().zip(output.components.iter_mut()) {
-            *e2 = e1 * rhs;
+        Self {
+            components: self.components.map(|x| x * rhs),
+            dimensions: N,
         }
-
-        output
     }
 }
 
-impl<T: Float, const N: usize> MulAssign for Vector<T, N> {
+
+impl<T: Float, const N: usize> MulAssign<T> for Vector<T, N> {
     fn mul_assign(&mut self, rhs: T) {
-        self.components = self.components.map(|&mut x| x = x * rhs);
+        for x in self.components.iter_mut() {
+            *x = *x * rhs;
+        }
     }
 }
 
@@ -66,20 +65,21 @@ impl<T: Float, const N: usize> SubAssign for Vector<T, N> {
     }
 }
 
-impl<T: Float, const N: usize> Div for Vector<T, N> {
+impl<T: Float, const N: usize> Div<T> for Vector<T, N> {
     type Output = Self;
 
     fn div(self, rhs: T) -> Self::Output {
-        let mut output = Self::zero();
-
-        for (qoutient, e1) in output.iter_mut().zip(&self.components.iter()) {
-            *qoutient = e1 / rhs;
+        Self {
+            components: self.components.map(|x| x / rhs),
+            dimensions: N,
         }
     }
 }
 
-impl<T: Float, const N: usize> DivAssign for Vector<T, N> {
+impl<T: Float, const N: usize> DivAssign<T> for Vector<T, N> {
     fn div_assign(&mut self, rhs: T) {
-        self.components = self.components.map(|&mut x| *x = x / rhs);
+        for x in self.components.iter_mut() {
+            *x = *x * rhs;
+        }
     }
 }

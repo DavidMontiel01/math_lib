@@ -19,26 +19,26 @@ impl<T: Float, const N: usize> Vector<T, N> {
 
     pub fn zero() -> Vector<T, N> {
         Vector {
-            components: [0; N],
+            components: [T::from(0.0).expect("REASON"); N],
             dimensions: N,
         }
     }
 
-    pub fn magnitude(&self) -> impl Float {
-        let mut result: T = Float::from(0);
+    pub fn magnitude(&self) -> T {
+        let mut result: T = T::from(0.0).expect("REASON");
 
         for x in self.components {
             let square = x * x;
             result = result + square;
         }
 
-        let result = result.powf(1 / 2);
+        let result = result.powf(T::from(1.0 / 2.0).expect("REASON"));
 
         result
     }
 
-    pub fn dot(&self, rhs: &Self) -> impl Float {
-        let mut result: T = Float::from(0);
+    pub fn dot(&self, rhs: &Self) -> T {
+        let mut result: T = T::from(0).expect("REASON");
 
         for (ele1, ele2) in self.components.iter().zip(rhs.components.iter()) {
             let product = *ele1 * *ele2;
@@ -50,10 +50,10 @@ impl<T: Float, const N: usize> Vector<T, N> {
 
     pub fn unit_vector(&self) -> Vector<T, N> {
         let mut normalized_components: [T; N] = self.components;
-        let magnitude = self.magnitude();
+        let magnitude: T = T::from(self.magnitude()).expect("magnitude could not be calculated");
 
         for x in &mut normalized_components {
-            *x = x * (1 / magnitude);
+            *x = *x / magnitude;
         }
 
         Vector {
@@ -62,16 +62,15 @@ impl<T: Float, const N: usize> Vector<T, N> {
         }
     }
 
-    pub fn angle_rad(&self, rhs: &Self) -> impl Float {
-        Float::acos(self.dot(rhs) / self.magnitude() * rhs.magnitude())
+    pub fn angle_rad(&self, rhs: &Self) -> T {
+        T::acos(self.dot(rhs) / self.magnitude() * rhs.magnitude())
     }
 
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<T> {
-       self.components.iter_mut()
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
+        self.components.iter_mut()
     }
 
-    pub fn iter(&self) -> std::slice::Iter<T> {
+    pub fn iter(&self) -> std::slice::Iter<'_, T> {
         self.components.iter()
     }
-
 }
